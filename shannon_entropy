@@ -1,0 +1,16 @@
+% Shannon entropy
+function H = shannon_entropy(signal)
+    % Calcola la larghezza del bin usando la regola di Freedman-Diaconis
+    IQR = prctile(signal, 75) - prctile(signal, 25); % Intervallo Interquartile
+    binWidth = 2 * IQR * length(signal)^(-1/3); % Larghezza del bin
+    numBins = ceil((max(signal) - min(signal)) / binWidth); % Numero di bin
+
+    % Discretizza il segnale in un numero di bin
+    [counts, ~] = histcounts(signal, numBins);
+
+    % Calcola le probabilità
+    probabilities = counts / sum(counts);
+
+    % Calcola l'entropia di Shannon
+    H = -sum(probabilities .* log2(probabilities + eps));  % eps per evitare il logaritmo di 0
+end
