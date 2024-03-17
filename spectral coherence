@@ -1,0 +1,44 @@
+% SPECTRAL COHERENCE 
+% Simulated signals
+% Fs = 1000; % samplig frequency
+t = 0:1/Fs:1-1/Fs; % 1 sec
+signal1 = cos(2*pi*50*t) + randn(size(t)); % 50 hz signal + some noise
+signal2 = cos(2*pi*50*t + pi/4) + randn(size(t)); % same but with (costant) phase shift
+
+% compute FFT for both signals
+fft1 = fft(signal1);
+fft2 = fft(signal2);
+
+% compute cross-spectral density (CSD)
+csd = fft1 .* conj(fft2);
+
+% compute power (power spectral density; PSD) for each signal
+psd1 = fft1 .* conj(fft1);
+psd2 = fft2 .* conj(fft2);
+
+% Calcolare la coerenza spettrale
+coh = abs(csd).^2 ./ (psd1 .* psd2);
+
+% get the frequencies associated with each point of the FFT
+freq = (0:length(coh)-1)'*Fs/length(coh);
+
+% Plot spectral coherence
+figure;
+plot(freq, coh);
+title('Coerenza Spettrale tra Signal1 e Signal2');
+xlabel('Frequenza (Hz)');
+ylabel('Coerenza Spettrale');
+axis tight;
+grid on;
+
+% cut the frequency dimension to Nyquist
+freq = freq(1:floor(end/2));
+coh = coh(1:floor(end/2));
+
+%plot figure;
+plot(freq, coh);
+title('Coerenza Spettrale tra Signal1 e Signal2 (Intervallo Nyquist)');
+xlabel('Frequenza (Hz)');
+ylabel('Coerenza Spettrale');
+axis tight;
+grid on;
