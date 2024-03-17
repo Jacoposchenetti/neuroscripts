@@ -1,0 +1,90 @@
+function create_gui()
+    % Create the UI figure and configure its size and title
+    fig = uifigure('Name', 'Frequency Amplitude Adjuster', 'Position', [100 100 1400 800]);
+
+    % Create axes for time-domain signal
+    axTime = uiaxes('Parent', fig, 'Position', [350 450 900 300], 'XLim', [0 1], 'YLim', [-10 10]);
+    title(axTime, 'Time-Domain Signal');
+
+    % Create axes for frequency-domain signal
+    axFreq = uiaxes('Parent', fig, 'Position', [350 100 900 300], 'XLim', [0 100], 'YLim', [0 3]);
+    title(axFreq, 'Frequency Spectrum');
+
+    % Define parameters for positioning sliders and labels
+    sliderStartX = 50;
+    sliderStartY = 750;
+    labelStartY = 750;
+    sliderSpacing = 30;
+
+    % Define parameters for sliders
+    sliderWidth = 200;
+    sliderHeight = 3;
+
+    % Define parameters for labels
+    labelWidth = 100;
+    labelHeight = 22;
+
+    % Create sliders and labels for theta, alpha, beta, gamma, white noise, pink noise
+    freqNames = {'Theta', 'Alpha', 'Beta', 'Gamma', 'White Noise', 'Pink Noise'};
+    sliders = cell(1, length(freqNames));
+    for i = 1:length(freqNames)
+        % Slider
+        sliders{i} = uislider(fig, ...
+                              'Position', [sliderStartX, sliderStartY - (i-1) * sliderSpacing, sliderWidth, sliderHeight], ...
+                              'Limits', [0 10], 'Value', 0.5); % Adjusted limits to [0 10] for better control
+        % Label
+        uilabel(fig, ...
+                'Position', [sliderStartX + sliderWidth + 10, labelStartY - (i-1) * sliderSpacing, labelWidth, labelHeight], ...
+                'Text', freqNames{i});
+    end
+
+    % Create the Enter button to update plots
+    enterButton = uibutton(fig, 'push', ...
+                           'Text', 'Enter', ...
+                           'Position', [sliderStartX, sliderStartY - (length(freqNames)) * sliderSpacing - 50, 100, 22], ...
+                           'ButtonPushedFcn', @(btn,event) updatePlot(sliders, axTime, axFreq));
+
+    % Initial plot update
+    updatePlot(sliders, axTime, axFreq);
+end
+
+function updatePlot(sliders, axTime, axFreq)
+    Fs = 1000; % Sampling frequency
+    t = 0:1/Fs:1; % Time vector (1 second)
+    signal = zeros(size(t));
+
+    % Sum up the frequency components from theta to gamma
+    freqRanges = [4 8; 8 12; 13 29; 30 100];
+    for i = 1:4
+        A = sliders{i}.Value; % Amplitude from slider
+        f = mean(freqRanges(i, :)); % Mean frequency of the band
+        signal = signal + A * sin(2 * pi * f * t);
+    end
+
+    % Add white noise
+    whiteNoiseAmp = sliders{5}.Value;
+    signal = signal + whiteNoiseAmp * randn(size(t));
+
+    % Add pink noise (using a simple filter-based method)
+    pinkNoiseAmp = sliders{6}.Value;
+    pinkNoise = filter(1, [1 -0.9895], randn(size(t))); % Simple filter for pink noise approximation
+    signal = (signal + pinkNoiseAmp * pinkNoise)/10;
+
+    % Update time-domain plot
+    plot(axTime, t, signal);
+    xlabel(axTime, 'Time (s)');
+    ylabel(axTime, 'Amplitude');
+
+    % Update frequency-domain plot
+    Y = fft(signal);
+    P2 = abs(Y/length(signal));
+    P1 = P2(1:length(signal)/2+1);
+    P1(2:end-1) = 2*P1(2:end-1);
+    f = Fs*(0:(length(signal)/2))/length(signal);
+    plot(axFreq, f, P1);
+    xlabel(axFreq, 'Frequency (Hz)');
+    ylabel(axFreq, 'Magnitude');
+end
+
+
+
